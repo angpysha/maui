@@ -72,10 +72,10 @@
       <VersionMetadataLabel>@(VersionMetadata -> '%(Identity)', '-')</VersionMetadataLabel>
       <VersionMetadataPlusLabel Condition="'$(VersionMetadataLabel)' != ''">+$(VersionMetadataLabel)</VersionMetadataPlusLabel>
       <Version>$(GitBaseVersionMajor).$(GitBaseVersionMinor).$(GitBaseVersionPatch)</Version>
-      <PackageReferenceVersion>$(GitSemVerMajor).$(GitSemVerMinor).$(GitSemVerPatch)$(GitSemVerDashLabel)</PackageReferenceVersion>
-      <PackageReferenceVersion Condition="$(CI)">$(GitSemVerMajor).$(GitSemVerMinor).$(GitBaseVersionPatch)$(GitSemVerDashLabel).$(BUILDVERSION)</PackageReferenceVersion>
-      <VSComponentVersion>$(GitSemVerMajor).$(GitSemVerMinor).$(GitBaseVersionPatch)</VSComponentVersion>
-      <VSComponentVersion Condition="$(CI)">$(GitSemVerMajor).$(GitSemVerMinor).$(GitBaseVersionPatch).$(BUILDVERSION)</VSComponentVersion>
+      <PackageReferenceVersion>6.0.100-preview.7.2096</PackageReferenceVersion>
+      <PackageReferenceVersion Condition="$(CI)">6.0.100-preview.7.2096</PackageReferenceVersion>
+      <VSComponentVersion>6.0.100-preview.7.2096</VSComponentVersion>
+      <VSComponentVersion Condition="$(CI)">6.0.100-preview.7.2096</VSComponentVersion>
       <PackageVersion>$(PackageReferenceVersion)$(VersionMetadataPlusLabel)</PackageVersion>
     </PropertyGroup>
 

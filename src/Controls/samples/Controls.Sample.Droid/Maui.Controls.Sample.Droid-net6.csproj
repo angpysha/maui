@@ -12,6 +12,9 @@
   <!-- HACK: seems to fix a threading issue for now -->
   <ItemGroup>
     <None Remove="environment.txt" />
+    <None Remove="Resources\mipmap\icon.png" />
+    <None Remove="Resources\mipmap\icon_round.png" />
+    <None Remove="Resources\mipmap\launcher_foreground.png" />
     <AndroidEnvironment Include="environment.txt" />
   </ItemGroup>
 

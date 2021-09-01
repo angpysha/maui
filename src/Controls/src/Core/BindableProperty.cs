@@ -68,7 +68,8 @@ namespace Microsoft.Maui.Controls
 
 		BindableProperty(string propertyName, Type returnType, Type declaringType, object defaultValue, BindingMode defaultBindingMode = BindingMode.OneWay,
 								 ValidateValueDelegate validateValue = null, BindingPropertyChangedDelegate propertyChanged = null, BindingPropertyChangingDelegate propertyChanging = null,
-								 CoerceValueDelegate coerceValue = null, BindablePropertyBindingChanging bindingChanging = null, bool isReadOnly = false, CreateDefaultValueDelegate defaultValueCreator = null)
+								 CoerceValueDelegate coerceValue = null, BindablePropertyBindingChanging bindingChanging = null, bool isReadOnly = false, CreateDefaultValueDelegate defaultValueCreator = null,
+								 bool raiseOnEqual = false)
 		{
 			if (propertyName == null)
 				throw new ArgumentNullException(nameof(propertyName));
@@ -103,6 +104,7 @@ namespace Microsoft.Maui.Controls
 			BindingChanging = bindingChanging;
 			IsReadOnly = isReadOnly;
 			DefaultValueCreator = defaultValueCreator;
+			RaiseOnEqual = raiseOnEqual;
 		}
 
 		public Type DeclaringType { get; private set; }
@@ -116,6 +118,8 @@ namespace Microsoft.Maui.Controls
 		public string PropertyName { get; }
 
 		public Type ReturnType { get; }
+
+		public bool RaiseOnEqual { get; set; }
 
 		internal BindablePropertyBindingChanging BindingChanging { get; private set; }
 
@@ -137,6 +141,14 @@ namespace Microsoft.Maui.Controls
 		{
 			return new BindableProperty(propertyName, returnType, declaringType, defaultValue, defaultBindingMode, validateValue, propertyChanged, propertyChanging, coerceValue,
 				defaultValueCreator: defaultValueCreator);
+		}
+
+		public static BindableProperty CreateEx(string propertyName, Type returnType, Type declaringType, object defaultValue = null, BindingMode defaultBindingMode = BindingMode.OneWay,
+											  ValidateValueDelegate validateValue = null, BindingPropertyChangedDelegate propertyChanged = null, BindingPropertyChangingDelegate propertyChanging = null,
+											  CoerceValueDelegate coerceValue = null, CreateDefaultValueDelegate defaultValueCreator = null, bool raiseOnEqual = false)
+		{
+			return new BindableProperty(propertyName, returnType, declaringType, defaultValue, defaultBindingMode, validateValue, propertyChanged, propertyChanging, coerceValue,
+				defaultValueCreator: defaultValueCreator, raiseOnEqual: raiseOnEqual);
 		}
 
 		public static BindableProperty CreateAttached(string propertyName, Type returnType, Type declaringType, object defaultValue, BindingMode defaultBindingMode = BindingMode.OneWay,

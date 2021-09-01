@@ -33,9 +33,11 @@ namespace Maui.Controls.Sample
 		{
 			appBuilder.UseMauiApp<XamlApp>();
 
+			
 			appBuilder
 				.ConfigureMauiHandlers(handlers =>
 				{
+					
 #if __ANDROID__
 					handlers.AddCompatibilityRenderer(typeof(CustomButton),
 						typeof(Microsoft.Maui.Controls.Compatibility.Platform.Android.AppCompat.ButtonRenderer));
