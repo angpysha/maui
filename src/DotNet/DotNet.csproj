@@ -75,7 +75,7 @@
   <packageSources>
     <clear />
     <add key="local"   value="$(PackageOutputPath)" />
-    <add key="dotnet6" value="https://pkgs.dev.azure.com/dnceng/public/_packaging/6.0.100-preview.7.21379.14-shipping-1/nuget/v3/index.json" />
+    <add key="dotnet6" value="https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet6/nuget/v3/index.json" />
     <add key="xamarin" value="https://pkgs.dev.azure.com/azure-public/vside/_packaging/xamarin-impl/nuget/v3/index.json" />
   </packageSources>
 </configuration>
@@ -89,20 +89,7 @@
     />
     <Delete Files="$(_NuGetConfig)" />
 
-    <!--
-      HACK: temporarily put runtime packs in 'library-packs', until they can be resolved from 'packs'
-      See: https://github.com/dotnet/sdk/issues/14044
-    -->
-    <ItemGroup>
-      <_RuntimePacks Include="$(PackageOutputPath)/*.Runtime.*.nupkg" />
-      <_RuntimePacks Include="$(PackageOutputPath)/Microsoft.Maui.Extensions.*.nupkg" />
-    </ItemGroup>
-    <Copy SourceFiles="@(_RuntimePacks)" DestinationFolder="$(MSBuildExtensionsPath)../../library-packs" SkipUnchangedFiles="true" />
-
   </Target>
-
-  <!-- Eventually replaced by eng/Version.targets -->
-  <Target Name="SetVersions" />
 
   <PropertyGroup>
     <!-- These files should invalidate ./bin/dotnet completely -->
@@ -179,7 +166,7 @@
       Inputs="$(_Inputs)"
       Outputs="$(DotNetPacksDirectory).stamp">
     <Exec
-        Command="&quot;$(DotNetToolPath)&quot; workload install @(_WorkloadIds, ' ') --skip-manifest-update --verbosity diag --temp-dir $(DotNetTempDirectory)"
+        Command="&quot;$(DotNetToolPath)&quot; workload install %(_WorkloadIds.Identity) --skip-manifest-update --verbosity diag --temp-dir $(DotNetTempDirectory)"
         WorkingDirectory="$(MauiRootDirectory)"
     />
     <Touch Files="$(DotNetPacksDirectory).stamp" AlwaysCreate="true" />

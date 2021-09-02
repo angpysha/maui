@@ -48,7 +48,7 @@ namespace Microsoft.Maui.Controls
 			// Account for the ScrollView's margins and use the rest of the available space to measure the actual Content
 			var contentWidthConstraint = widthConstraint - Margin.HorizontalThickness;
 			var contentHeightConstraint = heightConstraint - Margin.VerticalThickness;
-			MeasureContent(contentWidthConstraint, contentHeightConstraint);			
+			MeasureContent(contentWidthConstraint, contentHeightConstraint);
 
 			// Now measure the ScrollView itself (ComputeDesiredSize will account for the ScrollView margins)
 			var defaultSize = this.ComputeDesiredSize(widthConstraint, heightConstraint);
@@ -56,14 +56,17 @@ namespace Microsoft.Maui.Controls
 			// The value from ComputeDesiredSize won't account for any margins on the Content; we'll need to do that manually
 			// And we'll use ResolveConstraints to make sure we're sticking within and explicit Height/Width values or externally
 			// imposed constraints
-			var desiredWidth = ResolveConstraints(widthConstraint, Width, defaultSize.Width + contentMargin.HorizontalThickness);
-			var desiredHeight = ResolveConstraints(heightConstraint, Height, defaultSize.Height + contentMargin.VerticalThickness);
+			var width = (this as IView).Width;
+			var height = (this as IView).Height;
+
+			var desiredWidth = ResolveConstraints(widthConstraint, width, defaultSize.Width + contentMargin.HorizontalThickness);
+			var desiredHeight = ResolveConstraints(heightConstraint, height, defaultSize.Height + contentMargin.VerticalThickness);
 
 			DesiredSize = new Size(desiredWidth, desiredHeight);
 			return DesiredSize;
 		}
 
-		void MeasureContent(double contentWidthConstraint, double contentHeightConstraint) 
+		void MeasureContent(double contentWidthConstraint, double contentHeightConstraint)
 		{
 			if (Content is not IView content)
 			{
@@ -105,8 +108,8 @@ namespace Microsoft.Maui.Controls
 				// So in each dimension, we assume the larger of the two values.
 
 				content.Arrange(
-					new Rectangle(0, 0, 
-					Math.Max(Frame.Width, content.DesiredSize.Width), 
+					new Rectangle(0, 0,
+					Math.Max(Frame.Width, content.DesiredSize.Width),
 					Math.Max(Frame.Height, content.DesiredSize.Height)));
 			}
 

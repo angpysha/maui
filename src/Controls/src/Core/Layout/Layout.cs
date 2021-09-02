@@ -7,7 +7,7 @@ using Microsoft.Maui.Layouts;
 namespace Microsoft.Maui.Controls
 {
 	[ContentProperty(nameof(Children))]
-	public abstract class Layout : View, Microsoft.Maui.ILayout, IList<IView>, IBindableLayout, IPaddingElement, IVisualTreeElement, ISafeAreaView
+	public abstract class Layout : View, Maui.ILayout, IList<IView>, IBindableLayout, IPaddingElement, IVisualTreeElement, ISafeAreaView
 	{
 		ReadOnlyCastingList<Element, IView> _logicalChildren;
 
@@ -21,7 +21,6 @@ namespace Microsoft.Maui.Controls
 		// This provides a Children property for XAML 
 		public IList<IView> Children => this;
 
-		public ILayoutHandler LayoutHandler => Handler as ILayoutHandler;
 		IList IBindableLayout.Children => _children;
 
 		internal override IReadOnlyList<Element> LogicalChildrenInternal =>
@@ -33,7 +32,7 @@ namespace Microsoft.Maui.Controls
 
 		public IView this[int index]
 		{
-			get => _children[index]; 
+			get => _children[index];
 			set
 			{
 				var old = _children[index];
@@ -49,8 +48,6 @@ namespace Microsoft.Maui.Controls
 					VisualDiagnostics.OnChildRemoved(this, oldElement, index);
 				}
 
-				LayoutHandler?.Remove(old);
-
 				_children[index] = value;
 
 				if (value is Element newElement)
@@ -59,9 +56,7 @@ namespace Microsoft.Maui.Controls
 					VisualDiagnostics.OnChildAdded(this, newElement);
 				}
 
-				LayoutHandler?.Add(value);
-
-				InvalidateMeasure();
+				OnUpdate(index, value, old);
 			}
 		}
 
@@ -72,7 +67,7 @@ namespace Microsoft.Maui.Controls
 			get => (Thickness)GetValue(PaddingElement.PaddingProperty);
 			set => SetValue(PaddingElement.PaddingProperty, value);
 		}
-		
+
 		public bool IgnoreSafeArea { get; set; }
 
 		protected abstract ILayoutManager CreateLayoutManager();
@@ -96,29 +91,36 @@ namespace Microsoft.Maui.Controls
 			}
 		}
 
-		public virtual void Add(IView child)
+		public void Add(IView child)
 		{
 			if (child == null)
 				return;
 
+			var index = _children.Count;
 			_children.Add(child);
 
 			if (child is Element element)
 			{
 				element.Parent = this;
-				VisualDiagnostics.OnChildAdded(this, element);
+				VisualDiagnostics.OnChildAdded(this, element, index);
 			}
 
-			InvalidateMeasure();
-			LayoutHandler?.Add(child);
+			OnAdd(index, child);
 		}
 
 		public void Clear()
 		{
-			for (int n = _children.Count - 1; n >= 0; n--)
+			for (var index = Count - 1; index >= 0; index--)
 			{
-				Remove(this[n]);
+				if (this[index] is Element element)
+				{
+					element.Parent = null;
+					VisualDiagnostics.OnChildRemoved(this, element, index);
+				}
 			}
+
+			_children.Clear();
+			OnClear();
 		}
 
 		public bool Contains(IView item)
@@ -149,30 +151,24 @@ namespace Microsoft.Maui.Controls
 				VisualDiagnostics.OnChildAdded(this, element);
 			}
 
-			InvalidateMeasure();
-
-			LayoutHandler?.Add(child);
+			OnInsert(index, child);
 		}
 
-		public virtual bool Remove(IView child)
+		public bool Remove(IView child)
 		{
 			if (child == null)
 				return false;
 
 			var index = _children.IndexOf(child);
-			var result = _children.Remove(child);
 
-			if (child is Element element)
+			if (index == -1)
 			{
-				element.Parent = null;
-				VisualDiagnostics.OnChildRemoved(this, element, index);
+				return false;
 			}
 
-			InvalidateMeasure();
+			RemoveAt(index);
 
-			LayoutHandler?.Remove(child);
-
-			return result;
+			return true;
 		}
 
 		public void RemoveAt(int index)
@@ -192,14 +188,41 @@ namespace Microsoft.Maui.Controls
 				VisualDiagnostics.OnChildRemoved(this, element, index);
 			}
 
-			InvalidateMeasure();
+			OnRemove(index, child);
+		}
 
-			LayoutHandler?.Remove(child);
+		protected virtual void OnAdd(int index, IView view)
+		{
+			var args = new Maui.Handlers.LayoutHandlerUpdate(index, view);
+			Handler?.Invoke(nameof(ILayoutHandler.Add), args);
+		}
+
+		protected virtual void OnClear()
+		{
+			Handler?.Invoke(nameof(ILayoutHandler.Clear));
+		}
+
+		protected virtual void OnRemove(int index, IView view)
+		{
+			var args = new Maui.Handlers.LayoutHandlerUpdate(index, view);
+			Handler?.Invoke(nameof(ILayoutHandler.Remove), args);
+		}
+
+		protected virtual void OnInsert(int index, IView view)
+		{
+			var args = new Maui.Handlers.LayoutHandlerUpdate(index, view);
+			Handler?.Invoke(nameof(ILayoutHandler.Insert), args);
+		}
+
+		protected virtual void OnUpdate(int index, IView view, IView oldView)
+		{
+			var args = new Maui.Handlers.LayoutHandlerUpdate(index, view);
+			Handler?.Invoke(nameof(ILayoutHandler.Update), args);
 		}
 
 		void IPaddingElement.OnPaddingPropertyChanged(Thickness oldValue, Thickness newValue)
 		{
-			InvalidateMeasure();
+			(this as IView).InvalidateMeasure();
 		}
 
 		Thickness IPaddingElement.PaddingDefaultValueCreator()

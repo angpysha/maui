@@ -1,5 +1,7 @@
 using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("Microsoft.Maui.Essentials.DeviceTests")]
+[assembly: InternalsVisibleTo("Microsoft.Maui.Essentials.UnitTests")]
 [assembly: InternalsVisibleTo("EssentialsTests")]
 [assembly: InternalsVisibleTo("EssentialsDeviceTestsAndroid")]
 [assembly: InternalsVisibleTo("EssentialsDeviceTestsUWP")]

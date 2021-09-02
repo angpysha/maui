@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using Android.Webkit;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Primitives;
@@ -52,6 +53,20 @@ namespace Microsoft.AspNetCore.Components.WebView.Maui
 		{
 			nativeView.StopLoading();
 
+			if (_webviewManager != null)
+			{
+				// Dispose this component's contents and block on completion so that user-written disposal logic and
+				// Blazor disposal logic will complete.
+				_webviewManager?
+					.DisposeAsync()
+					.AsTask()
+					.ConfigureAwait(false)
+					.GetAwaiter()
+					.GetResult();
+
+				_webviewManager = null;
+			}
+
 			_webViewClient?.Dispose();
 			_webChromeClient?.Dispose();
 		}
@@ -80,7 +95,8 @@ namespace Microsoft.AspNetCore.Components.WebView.Maui
 
 			var mauiAssetFileProvider = new AndroidMauiAssetFileProvider(Context.Assets, contentRootDir);
 
-			_webviewManager = new AndroidWebKitWebViewManager(this, NativeView, Services!, MauiDispatcher.Instance, mauiAssetFileProvider, hostPageRelativePath);
+			var jsComponents = new JSComponentConfigurationStore();
+			_webviewManager = new AndroidWebKitWebViewManager(this, NativeView, Services!, MauiDispatcher.Instance, mauiAssetFileProvider, jsComponents, hostPageRelativePath);
 			if (RootComponents != null)
 			{
 				foreach (var rootComponent in RootComponents)

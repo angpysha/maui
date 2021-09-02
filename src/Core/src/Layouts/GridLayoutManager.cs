@@ -19,7 +19,13 @@ namespace Microsoft.Maui.Layouts
 		public override Size Measure(double widthConstraint, double heightConstraint)
 		{
 			_gridStructure = new GridStructure(Grid, widthConstraint, heightConstraint);
-			return new Size(_gridStructure.MeasuredGridWidth(), _gridStructure.MeasuredGridHeight());
+
+			var measuredWidth = _gridStructure.MeasuredGridWidth();
+			var measuredHeight = _gridStructure.MeasuredGridHeight();
+
+			// TODO ezhart We need tests on all the layout managers to make sure they respect min/max height/width in measurement
+
+			return new Size(measuredWidth, measuredHeight);
 		}
 
 		public override Size ArrangeChildren(Rectangle bounds)
@@ -48,6 +54,10 @@ namespace Microsoft.Maui.Layouts
 			readonly double _gridHeightConstraint;
 			readonly double _explicitGridHeight;
 			readonly double _explicitGridWidth;
+			readonly double _gridMaxHeight;
+			readonly double _gridMinHeight;
+			readonly double _gridMaxWidth;
+			readonly double _gridMinWidth;
 
 			Row[] _rows { get; }
 			Column[] _columns { get; }
@@ -71,6 +81,10 @@ namespace Microsoft.Maui.Layouts
 
 				_explicitGridHeight = _grid.Height;
 				_explicitGridWidth = _grid.Width;
+				_gridMaxHeight = _grid.MaximumHeight;
+				_gridMinHeight = _grid.MinimumHeight;
+				_gridMaxWidth = _grid.MaximumWidth;
+				_gridMinWidth = _grid.MinimumWidth;
 
 				// Cache these GridLayout properties so we don't have to keep looking them up via _grid
 				// (Property access via _grid may have performance implications for some SDKs.)
@@ -190,30 +204,32 @@ namespace Microsoft.Maui.Layouts
 			public Rectangle GetCellBoundsFor(IView view, double xOffset, double yOffset)
 			{
 				var firstColumn = _grid.GetColumn(view).Clamp(0, _columns.Length - 1);
-				var lastColumn = firstColumn + _grid.GetColumnSpan(view).Clamp(1, _columns.Length - firstColumn);
+				var columnSpan = _grid.GetColumnSpan(view).Clamp(1, _columns.Length - firstColumn);
+				var lastColumn = firstColumn + columnSpan;
 
 				var firstRow = _grid.GetRow(view).Clamp(0, _rows.Length - 1);
-				var lastRow = firstRow + _grid.GetRowSpan(view).Clamp(1, _rows.Length - firstRow);
+				var rowSpan = _grid.GetRowSpan(view).Clamp(1, _rows.Length - firstRow);
+				var lastRow = firstRow + rowSpan;
 
 				double top = TopEdgeOfRow(firstRow);
 				double left = LeftEdgeOfColumn(firstColumn);
 
 				double width = 0;
+				double height = 0;
 
 				for (int n = firstColumn; n < lastColumn; n++)
 				{
 					width += _columns[n].Size;
 				}
 
-				double height = 0;
-
 				for (int n = firstRow; n < lastRow; n++)
 				{
 					height += _rows[n].Size;
 				}
 
-				// TODO ezhart this isn't correctly accounting for row spacing when spanning multiple rows
-				// (and column spacing is probably wrong, too)
+				// Account for any space between spanned rows/columns
+				width += (columnSpan - 1) * _columnSpacing;
+				height += (rowSpan - 1) * _rowSpacing;
 
 				return new Rectangle(left + xOffset, top + yOffset, width, height);
 			}
@@ -228,14 +244,38 @@ namespace Microsoft.Maui.Layouts
 				return SumDefinitions(_columns, _columnSpacing) + _padding.HorizontalThickness;
 			}
 
-			public double MeasuredGridHeight() 
+			public double MeasuredGridHeight()
 			{
-				return _explicitGridHeight > -1 ? _explicitGridHeight : GridHeight();
+				var height = _explicitGridHeight > -1 ? _explicitGridHeight : GridHeight();
+
+				if (_gridMaxHeight >= 0 && height > _gridMaxHeight)
+				{
+					height = _gridMaxHeight;
+				}
+
+				if (_gridMinHeight >= 0 && height < _gridMinHeight)
+				{
+					height = _gridMinHeight;
+				}
+
+				return height;
 			}
 
 			public double MeasuredGridWidth()
 			{
-				return _explicitGridWidth > -1 ? _explicitGridWidth : GridWidth();
+				var width = _explicitGridWidth > -1 ? _explicitGridWidth : GridWidth();
+
+				if (_gridMaxWidth >= 0 && width > _gridMaxWidth)
+				{
+					width = _gridMaxWidth;
+				}
+
+				if (_gridMinWidth >= 0 && width < _gridMinWidth)
+				{
+					width = _gridMinWidth;
+				}
+
+				return width;
 			}
 
 			double SumDefinitions(Definition[] definitions, double spacing)

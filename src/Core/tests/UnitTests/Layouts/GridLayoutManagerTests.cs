@@ -5,6 +5,7 @@ using System.Linq;
 using Microsoft.Maui.Controls;
 using Microsoft.Maui.Graphics;
 using Microsoft.Maui.Layouts;
+using Microsoft.Maui.Primitives;
 using NSubstitute;
 using Xunit;
 using static Microsoft.Maui.UnitTests.Layouts.LayoutTestHelpers;
@@ -37,8 +38,13 @@ namespace Microsoft.Maui.UnitTests.Layouts
 			}
 
 			var grid = Substitute.For<IGridLayout>();
-			grid.Width.Returns(-1);
-			grid.Height.Returns(-1);
+
+			grid.Height.Returns(Dimension.Unset);
+			grid.Width.Returns(Dimension.Unset);
+			grid.MinimumHeight.Returns(Dimension.Minimum);
+			grid.MinimumWidth.Returns(Dimension.Minimum);
+			grid.MaximumHeight.Returns(Dimension.Maximum);
+			grid.MaximumWidth.Returns(Dimension.Maximum);
 
 			grid.RowSpacing.Returns(rowSpacing);
 			grid.ColumnSpacing.Returns(colSpacing);
@@ -365,6 +371,7 @@ namespace Microsoft.Maui.UnitTests.Layouts
 			Assert.Equal(100 + 100 + 10, measure.Height);
 		}
 
+		[Category(GridSpacing)]
 		[Fact(DisplayName = "Column spacing shouldn't affect a single-column grid")]
 		public void SingleColumnIgnoresColumnSpacing()
 		{
@@ -377,6 +384,7 @@ namespace Microsoft.Maui.UnitTests.Layouts
 			AssertArranged(view, 0, 0, 100, 100);
 		}
 
+		[Category(GridSpacing)]
 		[Fact(DisplayName = "Two columns should include the column spacing once")]
 		public void TwoColumnsWithSpacing()
 		{
@@ -492,8 +500,7 @@ namespace Microsoft.Maui.UnitTests.Layouts
 			AssertArranged(view1, 100, 25, 50, 75);
 		}
 
-		[Category(GridSpan)]
-		[Category(GridSpacing)]
+		[Category(GridSpacing, GridSpan)]
 		[Fact(DisplayName = "Row spanning with row spacing")]
 		public void RowSpanningShouldAccountForSpacing()
 		{
@@ -512,9 +519,15 @@ namespace Microsoft.Maui.UnitTests.Layouts
 			Assert.Equal(150, measuredSize.Width);
 			Assert.Equal(50 + 50 + 5, measuredSize.Height);
 
-			AssertArranged(view0, 0, 0, 100, 100);
+			// Starts a Y = 0
 			AssertArranged(view1, 100, 0, 50, 50);
+
+			// Starts at the first row's height + the row spacing value, so Y = 50 + 5 = 55
 			AssertArranged(view2, 100, 55, 50, 50);
+
+			// We expect the height for the view spanning the rows to include the space between the rows,
+			// so 50 + 5 + 50 = 105
+			AssertArranged(view0, 0, 0, 100, 105);
 		}
 
 		[Category(GridSpan)]
@@ -558,9 +571,14 @@ namespace Microsoft.Maui.UnitTests.Layouts
 			Assert.Equal(50 + 50 + 5, measuredSize.Width);
 			Assert.Equal(100 + 50, measuredSize.Height);
 
-			AssertArranged(view0, 0, 0, 100, 100);
+			// Starts a X = 0
 			AssertArranged(view1, 0, 100, 50, 50);
+			// Starts at the first column's width + the column spacing, so X = 50 + 5 = 55
 			AssertArranged(view2, 55, 100, 50, 50);
+
+			// We expect the width for the view spanning the columns to include the space between the columns,
+			// so 50 + 5 + 50 = 105
+			AssertArranged(view0, 0, 0, 105, 100);
 		}
 
 		[Category(GridSpan)]
@@ -1210,6 +1228,7 @@ namespace Microsoft.Maui.UnitTests.Layouts
 			view.Received().Measure(Arg.Is<double>(100), Arg.Is<double>(100));
 		}
 
+		[Category(GridAbsoluteSizing)]
 		[Fact]
 		public void GridMeasureShouldUseExplicitHeight()
 		{
@@ -1226,6 +1245,7 @@ namespace Microsoft.Maui.UnitTests.Layouts
 			Assert.Equal(50, measure.Height);
 		}
 
+		[Category(GridAbsoluteSizing)]
 		[Fact]
 		public void GridMeasureShouldUseExplicitWidth()
 		{
@@ -1329,7 +1349,7 @@ namespace Microsoft.Maui.UnitTests.Layouts
 		}
 
 		[Fact]
-		public void ArrangeRespectsBounds() 
+		public void ArrangeRespectsBounds()
 		{
 			var grid = CreateGridLayout();
 			var view = CreateTestView(new Size(100, 100));
@@ -1340,8 +1360,170 @@ namespace Microsoft.Maui.UnitTests.Layouts
 			var measure = MeasureAndArrange(grid, double.PositiveInfinity, double.PositiveInfinity, 10, 15);
 
 			var expectedRectangle = new Rectangle(10, 15, measure.Width, measure.Height);
-			
+
 			view.Received().Arrange(Arg.Is(expectedRectangle));
+		}
+
+		[Category(GridAbsoluteSizing)]
+		[Theory]
+		[InlineData(50, 100, 50)]
+		[InlineData(100, 100, 100)]
+		[InlineData(100, 50, 50)]
+		[InlineData(0, 50, 0)]
+		[InlineData(-1, 50, 50)]
+		public void MeasureRespectsMaxHeight(double maxHeight, double viewHeight, double expectedHeight)
+		{
+			var grid = CreateGridLayout();
+			var view = CreateTestView(new Size(100, viewHeight));
+			SubstituteChildren(grid, view);
+			SetLocation(grid, view);
+
+			grid.MaximumHeight.Returns(maxHeight);
+
+			var layoutManager = new GridLayoutManager(grid);
+			var measure = layoutManager.Measure(double.PositiveInfinity, double.PositiveInfinity);
+
+			Assert.Equal(expectedHeight, measure.Height);
+		}
+
+		[Category(GridAbsoluteSizing)]
+		[Theory]
+		[InlineData(50, 100, 50)]
+		[InlineData(100, 100, 100)]
+		[InlineData(100, 50, 50)]
+		[InlineData(0, 50, 0)]
+		[InlineData(-1, 50, 50)]
+		public void MeasureRespectsMaxWidth(double maxWidth, double viewWidth, double expectedWidth)
+		{
+			var grid = CreateGridLayout();
+			var view = CreateTestView(new Size(viewWidth, 100));
+			SubstituteChildren(grid, view);
+			SetLocation(grid, view);
+
+			grid.MaximumWidth.Returns(maxWidth);
+
+			var layoutManager = new GridLayoutManager(grid);
+			var measure = layoutManager.Measure(double.PositiveInfinity, double.PositiveInfinity);
+
+			Assert.Equal(expectedWidth, measure.Width);
+		}
+
+		[Category(GridAbsoluteSizing)]
+		[Theory]
+		[InlineData(50, 10, 50)]
+		[InlineData(100, 100, 100)]
+		[InlineData(10, 50, 50)]
+		[InlineData(-1, 50, 50)]
+		public void MeasureRespectsMinHeight(double minHeight, double viewHeight, double expectedHeight)
+		{
+			var grid = CreateGridLayout();
+			var view = CreateTestView(new Size(100, viewHeight));
+			SubstituteChildren(grid, view);
+			SetLocation(grid, view);
+
+			grid.MinimumHeight.Returns(minHeight);
+
+			var layoutManager = new GridLayoutManager(grid);
+			var measure = layoutManager.Measure(double.PositiveInfinity, double.PositiveInfinity);
+
+			Assert.Equal(expectedHeight, measure.Height);
+		}
+
+		[Category(GridAbsoluteSizing)]
+		[Theory]
+		[InlineData(50, 10, 50)]
+		[InlineData(100, 100, 100)]
+		[InlineData(10, 50, 50)]
+		[InlineData(-1, 50, 50)]
+		public void MeasureRespectsMinWidth(double minWidth, double viewWidth, double expectedWidth)
+		{
+			var grid = CreateGridLayout();
+			var view = CreateTestView(new Size(viewWidth, 100));
+			SubstituteChildren(grid, view);
+			SetLocation(grid, view);
+
+			grid.MinimumWidth.Returns(minWidth);
+
+			var layoutManager = new GridLayoutManager(grid);
+			var measure = layoutManager.Measure(double.PositiveInfinity, double.PositiveInfinity);
+
+			Assert.Equal(expectedWidth, measure.Width);
+		}
+
+		[Fact]
+		[Category(GridAbsoluteSizing)]
+		public void MaxWidthDominatesWidth()
+		{
+			var grid = CreateGridLayout();
+			var view = CreateTestView(new Size(100, 100));
+			SubstituteChildren(grid, view);
+			SetLocation(grid, view);
+
+			grid.Width.Returns(75);
+			grid.MaximumWidth.Returns(50);
+
+			var layoutManager = new GridLayoutManager(grid);
+			var measure = layoutManager.Measure(double.PositiveInfinity, double.PositiveInfinity);
+
+			// The maximum value beats out the explicit value
+			Assert.Equal(50, measure.Width);
+		}
+
+		[Fact]
+		[Category(GridAbsoluteSizing)]
+		public void MinWidthDominatesMaxWidth()
+		{
+			var grid = CreateGridLayout();
+			var view = CreateTestView(new Size(100, 100));
+			SubstituteChildren(grid, view);
+			SetLocation(grid, view);
+
+			grid.MinimumWidth.Returns(75);
+			grid.MaximumWidth.Returns(50);
+
+			var layoutManager = new GridLayoutManager(grid);
+			var measure = layoutManager.Measure(double.PositiveInfinity, double.PositiveInfinity);
+
+			// The minimum value should beat out the maximum value
+			Assert.Equal(75, measure.Width);
+		}
+
+		[Fact]
+		[Category(GridAbsoluteSizing)]
+		public void MaxHeightDominatesHeight()
+		{
+			var grid = CreateGridLayout();
+			var view = CreateTestView(new Size(100, 100));
+			SubstituteChildren(grid, view);
+			SetLocation(grid, view);
+
+			grid.Height.Returns(75);
+			grid.MaximumHeight.Returns(50);
+
+			var layoutManager = new GridLayoutManager(grid);
+			var measure = layoutManager.Measure(double.PositiveInfinity, double.PositiveInfinity);
+
+			// The maximum value beats out the explicit value
+			Assert.Equal(50, measure.Height);
+		}
+
+		[Fact]
+		[Category(GridAbsoluteSizing)]
+		public void MinHeightDominatesMaxHeight()
+		{
+			var grid = CreateGridLayout();
+			var view = CreateTestView(new Size(100, 100));
+			SubstituteChildren(grid, view);
+			SetLocation(grid, view);
+
+			grid.MinimumHeight.Returns(75);
+			grid.MaximumHeight.Returns(50);
+
+			var layoutManager = new GridLayoutManager(grid);
+			var measure = layoutManager.Measure(double.PositiveInfinity, double.PositiveInfinity);
+
+			// The minimum value should beat out the maximum value
+			Assert.Equal(75, measure.Height);
 		}
 	}
 }

@@ -5,7 +5,6 @@ using Microsoft.Maui.Controls.Xaml;
 
 namespace Microsoft.Maui.Controls
 {
-	[TypeConversion(typeof(double))]
 	public class FontSizeConverter : TypeConverter, IExtendedTypeConverter
 	{
 		public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType)
@@ -61,7 +60,7 @@ namespace Microsoft.Maui.Controls
 		public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value)
 		{
 			var strValue = value?.ToString();
-			
+
 			if (strValue != null)
 			{
 				if (double.TryParse(strValue, NumberStyles.Number, CultureInfo.InvariantCulture, out double size))

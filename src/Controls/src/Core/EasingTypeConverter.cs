@@ -8,7 +8,6 @@ using static Microsoft.Maui.Easing;
 namespace Microsoft.Maui.Controls
 {
 	[Xaml.ProvideCompiled("Microsoft.Maui.Controls.XamlC.EasingTypeConverter")]
-	[Xaml.TypeConversion(typeof(Easing))]
 	public class EasingTypeConverter : TypeConverter
 	{
 		public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType)
@@ -101,7 +100,7 @@ namespace Microsoft.Maui.Controls
 			=> false;
 
 		public override StandardValuesCollection GetStandardValues(ITypeDescriptorContext context)
-			=> new(new [] {
+			=> new(new[] {
 				"Linear",
 				"SinOut",
 				"SinIn",

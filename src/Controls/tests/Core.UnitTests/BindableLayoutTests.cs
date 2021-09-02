@@ -10,7 +10,7 @@ using NUnit.Framework;
 namespace Microsoft.Maui.Controls.Core.UnitTests
 {
 	using StackLayout = Microsoft.Maui.Controls.Compatibility.StackLayout;
-	
+
 	[TestFixture]
 	public class BindableLayoutTests : BaseTestFixture
 	{
@@ -247,7 +247,7 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 			Assert.IsTrue(IsLayoutWithItemsSource(itemsSource, layout));
 		}
 
-		[Test]
+		[Test, Ignore("https://github.com/dotnet/maui/issues/1524")]
 		public void LayoutIsGarbageCollectedAfterItsRemoved()
 		{
 			var layout = new StackLayout

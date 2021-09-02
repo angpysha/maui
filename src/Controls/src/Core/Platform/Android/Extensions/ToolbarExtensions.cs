@@ -9,8 +9,8 @@ using Android.Views;
 using Microsoft.Maui.Graphics;
 using ATextView = global::Android.Widget.TextView;
 using AToolbar = AndroidX.AppCompat.Widget.Toolbar;
-using Color = Microsoft.Maui.Graphics.Color;
 using AView = global::Android.Views.View;
+using Color = Microsoft.Maui.Graphics.Color;
 
 namespace Microsoft.Maui.Controls.Platform
 {
@@ -142,7 +142,7 @@ namespace Microsoft.Maui.Controls.Platform
 
 		internal static void UpdateMenuItemIcon(IMauiContext mauiContext, IMenuItem menuItem, ToolbarItem toolBarItem, Color tintColor)
 		{
-			ShellImagePart.LoadImage(toolBarItem, mauiContext, result =>
+			ImageSourceLoader.LoadImage(toolBarItem, mauiContext, result =>
 			{
 				var baseDrawable = result.Value;
 				if (menuItem == null || !menuItem.IsAlive())

@@ -1,12 +1,12 @@
+using Microsoft.Maui.Controls.Compatibility;
 using Microsoft.Maui.Hosting;
 using Microsoft.Maui.LifecycleEvents;
-using Microsoft.Maui.Controls.Compatibility;
 
 namespace Microsoft.Maui.Controls.Hosting
 {
 	public static partial class AppHostBuilderExtensions
 	{
-		internal static IAppHostBuilder ConfigureCompatibilityLifecycleEvents(this IAppHostBuilder builder) =>
+		internal static MauiAppBuilder ConfigureCompatibilityLifecycleEvents(this MauiAppBuilder builder) =>
 			   builder.ConfigureLifecycleEvents(events => events.AddiOS(OnConfigureLifeCycle));
 
 		static void OnConfigureLifeCycle(IiOSLifecycleBuilder iOS)
